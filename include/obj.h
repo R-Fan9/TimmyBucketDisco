@@ -37,6 +37,11 @@ public:
     return attrib.normals;
   }
 
+  std::vector<tinyobj::real_t> getTexCoords()
+  {
+    return attrib.texcoords;
+  }
+
 private:
   std::string obj_path;
   tinyobj::attrib_t attrib;
