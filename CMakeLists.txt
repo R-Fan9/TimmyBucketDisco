@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.26)
-project(FacialExps)
+project(TimmyBucketDisco)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -12,6 +12,6 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 file(COPY ${CMAKE_SOURCE_DIR}/shaders DESTINATION ${CMAKE_BINARY_DIR})
 file(COPY ${CMAKE_SOURCE_DIR}/asset DESTINATION ${CMAKE_BINARY_DIR})
 
-add_executable(FacialExps ${SOURCE_FILES})
+add_executable(TimmyBucketDisco ${SOURCE_FILES})
 
-target_link_libraries(FacialExps glfw)
+target_link_libraries(TimmyBucketDisco glfw)
