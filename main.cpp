@@ -29,16 +29,6 @@ static uint32_t ss_id = 0;
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
 
-const std::vector<std::string> obj_paths = {"asset/bucket.obj", "asset/floor.obj"};
-const std::vector<std::string> img_paths = {"asset/bucket.jpg", "asset/floor.jpeg"};
-std::vector<GLuint> VAOs(obj_paths.size());
-std::vector<GLuint> VBOs(obj_paths.size() * 3);
-std::vector<unsigned int> textures(obj_paths.size());
-
-void setup_objs(std::vector<Obj> objs, std::vector<std::string> imgs);
-
-std::vector<Obj> load_objs(std::vector<std::string> obj_paths);
-
 int main()
 {
   // initialize and configure
@@ -79,18 +69,184 @@ int main()
   // build and compile shader program
   Shader shader("shaders/shader.vs", "shaders/shader.fs");
 
-  std::vector<Obj> objs = load_objs(obj_paths);
+  // load floor obj
+  Obj floor("asset/floor.obj");
+  std::vector<tinyobj::shape_t> shapes = floor.getShapes();
+  std::vector<tinyobj::real_t> vertices = floor.getVertices();
+  std::vector<tinyobj::real_t> normals = floor.getNormals();
+  std::vector<tinyobj::real_t> texcoords = floor.getTexCoords();
 
-  setup_objs(objs, img_paths);
+  std::vector<tinyobj::real_t> vbuffer, nbuffer, tbuffer;
+  for (auto id : shapes[0].mesh.indices)
+  {
+    int vid = id.vertex_index;
+    int nid = id.normal_index;
+    int tid = id.texcoord_index;
+
+    // vertex positions
+    vbuffer.push_back(vertices[vid * 3]);
+    vbuffer.push_back(vertices[vid * 3 + 1]);
+    vbuffer.push_back(vertices[vid * 3 + 2]);
+
+    // normal positions
+    nbuffer.push_back(normals[nid * 3]);
+    nbuffer.push_back(normals[nid * 3 + 1]);
+    nbuffer.push_back(normals[nid * 3 + 2]);
+
+    // texture coordinates
+    tbuffer.push_back(texcoords[tid * 2]);
+    tbuffer.push_back(texcoords[tid * 2 + 1]);
+  }
+
+  int width, height, nrChannels;
+  stbi_set_flip_vertically_on_load(true);
+  unsigned char *data = stbi_load("asset/floor.jpeg", &width, &height, &nrChannels, 0);
+
+  if (!data)
+  {
+    std::cout << "Failed to load texture" << std::endl;
+    return -1;
+  }
+
+  unsigned int textureT;
+  glGenTextures(1, &textureT);
+  glBindTexture(GL_TEXTURE_2D, textureT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+  stbi_image_free(data);
+
+  GLuint VAO, VBO_vertices, VBO_normals, VBO_texcoords;
+  glGenVertexArrays(1, &VAO);
+  glBindVertexArray(VAO);
+
+  // bind vertex array to vertex buffer
+  glGenBuffers(1, &VBO_vertices);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_vertices);
+  glBufferData(GL_ARRAY_BUFFER, vbuffer.size() * sizeof(tinyobj::real_t), &vbuffer[0],
+               GL_STATIC_DRAW);
+
+  // position attribute
+  // GLuint vertex_loc = shader.getAttribLocation("aPos");
+  glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(tinyobj::real_t),
+                        (void *)0);
+  glEnableVertexAttribArray(0);
+
+  // bind normal array to normal buffer
+  glGenBuffers(1, &VBO_normals);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_normals);
+  glBufferData(GL_ARRAY_BUFFER, nbuffer.size() * sizeof(tinyobj::real_t), &nbuffer[0],
+               GL_STATIC_DRAW);
+
+  // normal attribute
+  glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(tinyobj::real_t),
+                        (void *)0);
+  glEnableVertexAttribArray(1);
+
+  // bind texture coordinate array to texture coordinate buffer
+  glGenBuffers(1, &VBO_texcoords);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_texcoords);
+  glBufferData(GL_ARRAY_BUFFER, tbuffer.size() * sizeof(tinyobj::real_t), &tbuffer[0],
+               GL_STATIC_DRAW);
+
+  // texture coordinate attribute
+  glVertexAttribPointer(2, 2, GL_DOUBLE, GL_FALSE, 2 * sizeof(tinyobj::real_t),
+                        (void *)0);
+  glEnableVertexAttribArray(2);
+
+  // load bucket obj
+  Obj bucket("asset/bucket.obj");
+  shapes = bucket.getShapes();
+  vertices = bucket.getVertices();
+  normals = bucket.getNormals();
+  texcoords = bucket.getTexCoords();
+
+  std::vector<tinyobj::real_t> vbuffer1, nbuffer1, tbuffer1;
+  for (auto id : shapes[0].mesh.indices)
+  {
+    int vid = id.vertex_index;
+    int nid = id.normal_index;
+    int tid = id.texcoord_index;
+
+    // vertex positions
+    vbuffer1.push_back(vertices[vid * 3]);
+    vbuffer1.push_back(vertices[vid * 3 + 1]);
+    vbuffer1.push_back(vertices[vid * 3 + 2]);
+
+    // normal positions
+    nbuffer1.push_back(normals[nid * 3]);
+    nbuffer1.push_back(normals[nid * 3 + 1]);
+    nbuffer1.push_back(normals[nid * 3 + 2]);
+
+    // texture coordinates
+    tbuffer1.push_back(texcoords[tid * 2]);
+    tbuffer1.push_back(texcoords[tid * 2 + 1]);
+  }
+
+  int width1, height1, nrChannels1;
+  stbi_set_flip_vertically_on_load(true);
+  unsigned char *data1 = stbi_load("asset/bucket.jpg", &width1, &height1, &nrChannels1, 0);
+
+  if (!data1)
+  {
+    std::cout << "Failed to load texture" << std::endl;
+    return -1;
+  }
+
+  unsigned int textureT1;
+  glGenTextures(1, &textureT1);
+  glBindTexture(GL_TEXTURE_2D, textureT1);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width1, height1, 0, GL_RGB, GL_UNSIGNED_BYTE, data1);
+  stbi_image_free(data1);
+
+  GLuint VAO1, VBO_vertices1, VBO_normals1, VBO_texcoords1;
+  glGenVertexArrays(1, &VAO1);
+  glBindVertexArray(VAO1);
+
+  // bind vertex array to vertex buffer
+  glGenBuffers(1, &VBO_vertices1);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_vertices1);
+  glBufferData(GL_ARRAY_BUFFER, vbuffer1.size() * sizeof(tinyobj::real_t), &vbuffer1[0],
+               GL_STATIC_DRAW);
+
+  // position attribute
+  glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(tinyobj::real_t),
+                        (void *)0);
+  glEnableVertexAttribArray(0);
+
+  // bind normal array to normal buffer
+  glGenBuffers(1, &VBO_normals1);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_normals1);
+  glBufferData(GL_ARRAY_BUFFER, nbuffer1.size() * sizeof(tinyobj::real_t), &nbuffer1[0],
+               GL_STATIC_DRAW);
+
+  // normal attribute
+  glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(tinyobj::real_t),
+                        (void *)0);
+  glEnableVertexAttribArray(1);
+
+  // bind texture coordinate array to texture coordinate buffer
+  glGenBuffers(1, &VBO_texcoords1);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_texcoords1);
+  glBufferData(GL_ARRAY_BUFFER, tbuffer1.size() * sizeof(tinyobj::real_t), &tbuffer1[0],
+               GL_STATIC_DRAW);
+
+  // texture coordinate attribute
+  glVertexAttribPointer(2, 2, GL_DOUBLE, GL_FALSE, 2 * sizeof(tinyobj::real_t),
+                        (void *)0);
+  glEnableVertexAttribArray(2);
 
   glm::mat4 model = glm::mat4(1.0f);
   glm::mat4 view = glm::lookAt(glm::vec3(50, 100, 200), glm::vec3(0, 80, 0),
                                glm::vec3(0, 1, 0));
   glm::mat4 proj =
       glm::perspective(glm::radians(60.0f), 4.0f / 3.0f, 0.1f, 1000.0f);
-
-  const unsigned int t1 = textures[0];
-  const unsigned int t2 = textures[1];
 
   // render loop
   while (!glfwWindowShouldClose(window))
@@ -108,20 +264,13 @@ int main()
     shader.setMat4("projection", proj);
 
     // render container
-    // for (size_t i = 0; i < objs.size(); i++)
-    // {
-    //   glBindTexture(GL_TEXTURE_2D, textures[i]);
-    //   glBindVertexArray(VAOs[i]);
-    //   glDrawArrays(GL_TRIANGLES, 0, 1000000);
-    // }
+    glBindTexture(GL_TEXTURE_2D, textureT);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, vbuffer.size() / 3);
 
-    glBindTexture(GL_TEXTURE_2D, t2);
-    glBindVertexArray(VAOs[1]);
-    glDrawArrays(GL_TRIANGLES, 0, 10000000);
-
-    glBindTexture(GL_TEXTURE_2D, t1);
-    glBindVertexArray(VAOs[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 1000000);
+    glBindTexture(GL_TEXTURE_2D, textureT1);
+    glBindVertexArray(VAO1);
+    glDrawArrays(GL_TRIANGLES, 0, vbuffer1.size() / 3);
 
     // swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(window);
@@ -131,19 +280,6 @@ int main()
   // terminate, clearing all previously allocated GLFW resources.
   glfwTerminate();
   return 0;
-}
-
-std::vector<Obj> load_objs(std::vector<std::string> obj_paths)
-{
-  std::vector<Obj> objs;
-
-  for (auto path : obj_paths)
-  {
-    Obj obj(path.c_str());
-    objs.push_back(obj);
-  }
-
-  return objs;
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this
@@ -203,88 +339,4 @@ void dump_framebuffer_to_ppm(std::string prefix, uint32_t width,
   delete[] pixels;
   fout.flush();
   fout.close();
-}
-
-void setup_objs(std::vector<Obj> objs, std::vector<std::string> imgs)
-{
-  const int num_objs = objs.size();
-  glGenVertexArrays(num_objs, &VAOs[0]);
-  glGenBuffers(num_objs * 3, &VBOs[0]);
-  glGenTextures(num_objs, &textures[0]);
-
-  for (size_t i = 0; i < num_objs; i++)
-  {
-    std::vector<tinyobj::shape_t> shapes = objs[i].getShapes();
-    std::vector<tinyobj::real_t> vertices = objs[i].getVertices();
-    std::vector<tinyobj::real_t> normals = objs[i].getNormals();
-    std::vector<tinyobj::real_t> texcoords = objs[i].getTexCoords();
-
-    std::vector<tinyobj::real_t> vbuffer, nbuffer, tbuffer;
-    for (auto id : shapes[0].mesh.indices)
-    {
-      int vid = id.vertex_index;
-      int nid = id.normal_index;
-      int tid = id.texcoord_index;
-
-      // vertex positions
-      vbuffer.push_back(vertices[vid * 3]);
-      vbuffer.push_back(vertices[vid * 3 + 1]);
-      vbuffer.push_back(vertices[vid * 3 + 2]);
-
-      // normal positions
-      nbuffer.push_back(normals[nid * 3]);
-      nbuffer.push_back(normals[nid * 3 + 1]);
-      nbuffer.push_back(normals[nid * 3 + 2]);
-
-      // texture coordinates
-      tbuffer.push_back(texcoords[tid * 2]);
-      tbuffer.push_back(texcoords[tid * 2 + 1]);
-    }
-
-    int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(true);
-    unsigned char *data = stbi_load(imgs[i].c_str(), &width, &height, &nrChannels, 0);
-
-    if (!data)
-    {
-      std::cout << "Failed to load texture" << std::endl;
-      exit(-1);
-    }
-
-    glBindTexture(GL_TEXTURE_2D, textures[i]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    stbi_image_free(data);
-
-    glBindVertexArray(VAOs[i]);
-
-    // vertices
-    glBindBuffer(GL_ARRAY_BUFFER, VBOs[i * 3]);
-    glBufferData(GL_ARRAY_BUFFER, vbuffer.size() * sizeof(tinyobj::real_t), &vbuffer[0],
-                 GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(tinyobj::real_t),
-                          (void *)0);
-    glEnableVertexAttribArray(0);
-
-    // normals
-    glBindBuffer(GL_ARRAY_BUFFER, VBOs[i * 3 + 1]);
-    glBufferData(GL_ARRAY_BUFFER, nbuffer.size() * sizeof(tinyobj::real_t), &nbuffer[0],
-                 GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(tinyobj::real_t),
-                          (void *)0);
-    glEnableVertexAttribArray(1);
-
-    // texture coordinates
-    glBindBuffer(GL_ARRAY_BUFFER, VBOs[i * 3 + 2]);
-    glBufferData(GL_ARRAY_BUFFER, tbuffer.size() * sizeof(tinyobj::real_t), &tbuffer[0],
-                 GL_STATIC_DRAW);
-    glVertexAttribPointer(2, 2, GL_DOUBLE, GL_FALSE, 2 * sizeof(tinyobj::real_t),
-                          (void *)0);
-    glEnableVertexAttribArray(2);
-
-    glBindVertexArray(0);
-  }
 }
