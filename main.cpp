@@ -29,8 +29,8 @@ static uint32_t ss_id = 0;
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
 
-const std::vector<std::string> obj_paths = {"asset/bucket.obj"};
-const std::vector<std::string> img_paths = {"asset/bucket.jpg"};
+const std::vector<std::string> obj_paths = {"asset/timmy.obj", "asset/bucket.obj", "asset/floor.obj"};
+const std::vector<std::string> img_paths = {"asset/timmy.png", "asset/bucket.jpg", "asset/floor.jpeg"};
 std::vector<GLuint> VAOs(obj_paths.size());
 std::vector<GLuint> VBOs(obj_paths.size() * 3);
 std::vector<unsigned int> textures(obj_paths.size());
@@ -101,7 +101,10 @@ int main()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // point light position
-    glm::vec3 lightPos(sin(theta) * 150, 100, cos(theta) * 150);
+    glm::vec3 lightPos(0, 200, 0);
+    glm::vec3 spotDirR(50 + sin(theta) * 50, -200, -50 + cos(theta) * 50);
+    glm::vec3 spotDirG(-50 + sin(theta) * 50, -200, -50 + cos(theta) * 50);
+    glm::vec3 spotDirB(0 + sin(theta) * 50, -200, 50 + cos(theta) * 50);
     theta += 0.05f;
 
     // activate shader
@@ -109,7 +112,33 @@ int main()
     shader.setMat4("model", model);
     shader.setMat4("view", view);
     shader.setMat4("projection", proj);
-    shader.setVec3("lightPos", lightPos);
+
+    shader.setVec3("lights[0].position", lightPos);
+    shader.setVec3("lights[0].direction", spotDirR);
+    shader.setFloat("lights[0].cutOff", glm::cos(M_PI / 6.0f));
+    shader.setVec3("lights[0].ambient", 0.2f, 0.2f, 0.2f);
+    shader.setVec3("lights[0].diffuse", 1.0f, 0.0f, 0.0f);
+    shader.setFloat("lights[0].constant", 1.0f);
+    shader.setFloat("lights[0].linear", 0.35e-4f);
+    shader.setFloat("lights[0].quadratic", 0.44e-4);
+
+    shader.setVec3("lights[1].position", lightPos);
+    shader.setVec3("lights[1].direction", spotDirG);
+    shader.setFloat("lights[1].cutOff", glm::cos(M_PI / 6.0f));
+    shader.setVec3("lights[1].ambient", 0.2f, 0.2f, 0.2f);
+    shader.setVec3("lights[1].diffuse", 0.0f, 1.0f, 0.0f);
+    shader.setFloat("lights[1].constant", 1.0f);
+    shader.setFloat("lights[1].linear", 0.35e-4f);
+    shader.setFloat("lights[1].quadratic", 0.44e-4);
+
+    shader.setVec3("lights[2].position", lightPos);
+    shader.setVec3("lights[2].direction", spotDirB);
+    shader.setFloat("lights[2].cutOff", glm::cos(M_PI / 6.0f));
+    shader.setVec3("lights[2].ambient", 0.2f, 0.2f, 0.2f);
+    shader.setVec3("lights[2].diffuse", 0.0f, 0.0f, 1.0f);
+    shader.setFloat("lights[2].constant", 1.0f);
+    shader.setFloat("lights[2].linear", 0.35e-4f);
+    shader.setFloat("lights[2].quadratic", 0.44e-4);
 
     // render container
     for (size_t i = 0; i < objs.size(); i++)
