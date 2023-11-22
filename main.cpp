@@ -29,8 +29,8 @@ static uint32_t ss_id = 0;
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
 
-const std::vector<std::string> obj_paths = {"asset/bucket.obj"};
-const std::vector<std::string> img_paths = {"asset/bucket.jpg"};
+const std::vector<std::string> obj_paths = {"asset/timmy.obj", "asset/bucket.obj", "asset/floor.obj"};
+const std::vector<std::string> img_paths = {"asset/timmy.png", "asset/bucket.jpg", "asset/floor.jpeg"};
 std::vector<GLuint> VAOs(obj_paths.size());
 std::vector<GLuint> VBOs(obj_paths.size() * 3);
 std::vector<unsigned int> textures(obj_paths.size());
@@ -109,7 +109,13 @@ int main()
     shader.setMat4("model", model);
     shader.setMat4("view", view);
     shader.setMat4("projection", proj);
-    shader.setVec3("lightPos", lightPos);
+
+    shader.setVec3("light.position", lightPos);
+    shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+    shader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
+    shader.setFloat("light.constant", 1.0f);
+    shader.setFloat("light.linear", 0.007e-4f);
+    shader.setFloat("light.quadratic", 0.0002e-4);
 
     // render container
     for (size_t i = 0; i < objs.size(); i++)
