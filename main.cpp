@@ -29,8 +29,8 @@ static uint32_t ss_id = 0;
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
 
-const std::vector<std::string> obj_paths = {"asset/timmy.obj", "asset/bucket.obj", "asset/floor.obj"};
-const std::vector<std::string> img_paths = {"asset/timmy.png", "asset/bucket.jpg", "asset/floor.jpeg"};
+const std::vector<std::string> obj_paths = {"asset/bucket.obj"};
+const std::vector<std::string> img_paths = {"asset/bucket.jpg"};
 std::vector<GLuint> VAOs(obj_paths.size());
 std::vector<GLuint> VBOs(obj_paths.size() * 3);
 std::vector<unsigned int> textures(obj_paths.size());
@@ -54,7 +54,7 @@ int main()
 
   // glfw window creation
   GLFWwindow *window =
-      glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Facial Expressions", NULL, NULL);
+      glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Timmy and the Bucket are at Disco", NULL, NULL);
   if (window == NULL)
   {
     std::cout << "Failed to create GLFW window" << std::endl;
@@ -89,8 +89,7 @@ int main()
   glm::mat4 proj =
       glm::perspective(glm::radians(60.0f), 4.0f / 3.0f, 0.1f, 1000.0f);
 
-  const unsigned int t1 = textures[0];
-  const unsigned int t2 = textures[1];
+  float theta = 0.0f;
 
   // render loop
   while (!glfwWindowShouldClose(window))
@@ -101,11 +100,16 @@ int main()
     glClearColor(0.3f, 0.4f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // point light position
+    glm::vec3 lightPos(sin(theta) * 150, 100, cos(theta) * 150);
+    theta += 0.05f;
+
     // activate shader
     shader.use();
     shader.setMat4("model", model);
     shader.setMat4("view", view);
     shader.setMat4("projection", proj);
+    shader.setVec3("lightPos", lightPos);
 
     // render container
     for (size_t i = 0; i < objs.size(); i++)
