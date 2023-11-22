@@ -16,8 +16,8 @@ void main()
 
     // compute attenuation
     float kc = 1.0;
-    float kl = 0.35e-4;
-    float kq = 0.44e-4;
+    float kl = 0.007e-4;
+    float kq = 0.0002e-4;
     float distance = length(lightPos - FragPos);
     float attenuation = 1.0 / (kc + kl * distance + kq * distance * distance);
 
