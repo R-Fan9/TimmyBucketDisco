@@ -24,6 +24,8 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 
 void process_input(GLFWwindow *window);
 
+void get_position_from_angle(float angle, float radius, float &adj_pos, float &opp_pos);
+
 static uint32_t ss_id = 0;
 
 const unsigned int SCR_WIDTH = 1024;
@@ -89,7 +91,21 @@ int main()
   glm::mat4 proj =
       glm::perspective(glm::radians(60.0f), 4.0f / 3.0f, 0.1f, 1000.0f);
 
-  float theta = 0.0f;
+  float spotDirRx = 50.0f;
+  float spotDirRz = -50.0f;
+  float thetaR = std::atan2(spotDirRz, spotDirRx);
+
+  float spotDirGx = -50.0f;
+  float spotDirGz = -50.0f;
+  float thetaG = std::atan2(spotDirGz, spotDirGx);
+
+  float spotDirBx = 0.0f;
+  float spotDirBz = 50.0f;
+  float thetaB = std::atan2(spotDirBz, spotDirBx);
+
+  float radiusR = std::sqrt(spotDirRx * spotDirRx + spotDirRz * spotDirRz);
+  float radiusG = std::sqrt(spotDirGx * spotDirGx + spotDirGz * spotDirGz);
+  float radiusB = std::sqrt(spotDirBx * spotDirBx + spotDirBz * spotDirBz);
 
   // render loop
   while (!glfwWindowShouldClose(window))
@@ -102,10 +118,17 @@ int main()
 
     // point light position
     glm::vec3 lightPos(0, 200, 0);
-    glm::vec3 spotDirR(50 + sin(theta) * 50, -200, -50 + cos(theta) * 50);
-    glm::vec3 spotDirG(-50 + sin(theta) * 50, -200, -50 + cos(theta) * 50);
-    glm::vec3 spotDirB(0 + sin(theta) * 50, -200, 50 + cos(theta) * 50);
-    theta += 0.05f;
+    glm::vec3 spotDirR(spotDirRx, -200, spotDirRz);
+    glm::vec3 spotDirG(spotDirGx, -200, spotDirGz);
+    glm::vec3 spotDirB(spotDirBx, -200, spotDirBz);
+
+    thetaR += 0.05f;
+    thetaG += 0.05f;
+    thetaB += 0.05f;
+
+    get_position_from_angle(thetaR, radiusR, spotDirRx, spotDirRz);
+    get_position_from_angle(thetaG, radiusG, spotDirGx, spotDirGz);
+    get_position_from_angle(thetaB, radiusB, spotDirBx, spotDirBz);
 
     // activate shader
     shader.use();
@@ -156,6 +179,12 @@ int main()
   // terminate, clearing all previously allocated GLFW resources.
   glfwTerminate();
   return 0;
+}
+
+void get_position_from_angle(float angle, float radius, float &adj_pos, float &opp_pos)
+{
+  adj_pos = radius * (float)cos(angle);
+  opp_pos = -radius * (float)sin(angle);
 }
 
 std::vector<Obj> load_objs(std::vector<std::string> obj_paths)
